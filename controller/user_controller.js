@@ -22,18 +22,16 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const response = await User.findOne({ email });
-        // console.log(response);
         if (response) {
             const verifyPassword = bcrypt.compareSync(password, response.password)
             if (verifyPassword) {
-                // console.log(verifyPassword);
-                jwt.sign({email:response.email,id:response._id} ,jwtSecretKey,{},(err,token)=>{
+                jwt.sign({email:response.email,id:response._id,name:response.name} ,jwtSecretKey,{},(err,token)=>{
                     if(err) throw err;
-                    res.cookie('token',token).json("Login Successfull");
+                    res.cookie('token',token).json();
                 })
             } else {
                 res.status(422).json("Login Failed Incorrect Credentials");
-            }
+            }   
         } else {
             console.log("not found");
         }
@@ -42,9 +40,36 @@ const login = async (req, res) => {
     }
 }
 
+const getUser = async (req,res) => {
+    try{
+        //after login token is generated and we are sending to cookies
+        // to access it we are calling this api
+        const {token} = req.cookies;
+        if(token){
+            jwt.verify(token,jwtSecretKey,{},(err,userData)=>{
+                if(err) throw err;      //if error occurs
+                res.json(userData)      // to send the data 
+            })
+        }else{
+            res.json(null)
+        }
+    }catch(err){
+        res.status(400).json(err)
+    }
+}
+
+const logoutUser = async (req,res)=>{
+    try{
+        res.cookie('token','').json(true)
+    }catch(err){
+        throw err;
+    }
+}
 
 module.exports = {
     login,
-    register
+    register,
+    getUser,
+    logoutUser
 }
 
